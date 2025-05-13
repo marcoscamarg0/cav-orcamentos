@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Orçamentos</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #005aa0;
+      --secondary-color: #ff6600;
+      --background-color: #f9f9f9;
+      --border-color: #ddd;
+      --header-bg: #0066cc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--background-color);
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    h1 {
+      color: var(--primary-color);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .form-section {
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      padding: 15px;
+    }
+
+    .form-section h2 {
+      margin-bottom: 15px;
+      color: var(--primary-color);
+      font-size: 1.2rem;
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .item-row td {
+      padding: 5px 8px;
+    }
+
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #004480;
+    }
+
+    .btn-secondary {
+      background-color: var(--secondary-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #e05a00;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .add-row-btn {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .delete-row-btn {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .totals {
+      text-align: right;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    #preview-container {
+      display: none;
+      margin-top: 30px;
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      background-color: white;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 10px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      background-color: var(--primary-color);
+      border-radius: 5px;
+      margin-right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    .company-info {
+      font-size: 0.8rem;
+    }
+
+    .company-info p {
+      margin: 2px 0;
+    }
+
+    .orcamento-numero {
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-align: center;
+      background-color: #f2f2f2;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    .slogan {
+      text-align: center;
+      color: var(--primary-color);
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .preview-section {
+      margin-bottom: 20px;
+    }
+
+    .preview-section h3 {
+      background-color: #f2f2f2;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .preview-field {
+      border: 1px solid var(--border-color);
+      padding: 5px;
+    }
+
+    .preview-field-label {
+      font-weight: bold;
+      font-size: 0.8rem;
+      margin-bottom: 3px;
+    }
+
+    .preview-field-value {
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 5px;
+      }
+      .form-row {
+        flex-direction: column;
+      }
+      .form-group {
+        min-width: 100%;
+        margin-right: 0;
+      }
+      .preview-grid {
+        grid-template-columns: 1fr;
+      }
+      .preview-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .logo-container {
+        flex-direction: row;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .company-info, .contact-info {
+        font-size: 1em;
+      }
+      table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+      }
+      th, td {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 8px 4px;
+        text-align: left;
+      }
+      tr {
+        margin-bottom: 10px;
+        border-bottom: 1px solid #eee;
+      }
+      .actions {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .totals {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sistema de Orçamentos</h1>
+    
+    <div class="form-section">
+      <h2>Dados da Empresa</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="empresa">Nome da Empresa</label>
+          <input type="text" id="empresa" value="">
+        </div>
+        <!-- Removido o campo CNPJ -->
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="endereco-empresa">Endereço</label>
+          <input type="text" id="endereco-empresa" value="">
+        </div>
+        <div class="form-group">
+          <label for="cidade-empresa">Cidade / UF / CEP</label>
+          <input type="text" id="cidade-empresa" value="">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="telefone-empresa">Telefone</label>
+          <input type="text" id="telefone-empresa" value="">
+        </div>
+        <div class="form-group">
+          <label for="email-empresa">E-mail</label>
+          <input type="text" id="email-empresa" value="">
+        </div>
+      </div>
+      <div class="form-row">
+        <!-- Removido o campo Vendedor -->
+        <div class="form-group">
+          <label for="slogan">Slogan/Mensagem</label>
+          <input type="text" id="slogan" value="">
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-section">
+      <h2>Informações do Orçamento</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="data">Data</label>
+          <input type="date" id="data" value="">
+        </div>
+        <div class="form-group">
+          <label for="previsao-entrega">Previsão de Entrega</label>
+          <input type="date" id="previsao-entrega" value="">
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-section">
+      <h2>Dados do Cliente</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cliente">Cliente</label>
+          <input type="text" id="cliente" value="">
+        </div>
+        <div class="form-group">
+          <label for="cpf-cnpj">CPF/CNPJ</label>
+          <input type="text" id="cpf-cnpj" value="">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="endereco-cliente">Endereço</label>
+          <input type="text" id="endereco-cliente" value="">
+        </div>
+        <div class="form-group">
+          <label for="cep">CEP</label>
+          <input type="text" id="cep" value="">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cidade">Cidade</label>
+          <input type="text" id="cidade" value="">
+        </div>
+        <div class="form-group">
+          <label for="estado">Estado</label>
+          <input type="text" id="estado" value="">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="telefone-cliente">Telefone</label>
+          <input type="text" id="telefone-cliente" value="">
+        </div>
+        <div class="form-group">
+          <label for="email-cliente">E-mail</label>
+          <input type="text" id="email-cliente" value="">
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-section">
+      <h2>Produtos</h2>
+      <div class="table-container">
+        <table id="produtos-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Nome</th>
+              <th>NCM</th>
+              <th>Und.</th>
+              <th>Qtd.</th>
+              <th>Vr. Unit.</th>
+              <th>Subtotal</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="item-row">
+              <td>1</td>
+              <td><input type="text" value=""></td>
+              <td><input type="text" value=""></td>
+              <td><input type="text" value=""></td>
+              <td><input type="number" class="qtd-produto" value="1.00" step="0.01"></td>
+              <td><input type="number" class="valor-unit-produto" value="0.00" step="0.01"></td>
+              <td class="subtotal-produto">0.00</td>
+              <td><button type="button" class="delete-row-btn">X</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button type="button" id="add-produto" class="add-row-btn">Adicionar Produto</button>
+      <div class="totals">
+        <p>Total Produtos: R$ <span id="total-produtos">0.00</span></p>
+      </div>
+    </div>
+    
+    <div class="form-section">
+      <h2>Serviços</h2>
+      <div class="table-container">
+        <table id="servicos-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Nome</th>
+              <th>Qtd.</th>
+              <th>Vr. Unit.</th>
+              <th>Subtotal</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="item-row">
+              <td>1</td>
+              <td><input type="text" value=""></td>
+              <td><input type="number" class="qtd-servico" value="1.00" step="0.01"></td>
+              <td><input type="number" class="valor-unit-servico" value="0.00" step="0.01"></td>
+              <td class="subtotal-servico">0.00</td>
+              <td><button type="button" class="delete-row-btn">X</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button type="button" id="add-servico" class="add-row-btn">Adicionar Serviço</button>
+      <div class="totals">
+        <p>Total Serviços: R$ <span id="total-servicos">0.00</span></p>
+      </div>
+    </div>
+    
+    <div class="form-section">
+      <h2>Forma de Pagamento</h2>
+      <div class="table-container">
+        <table id="pagamento-table">
+          <thead>
+            <tr>
+              <th>Vencimento</th>
+              <th>Valor</th>
+              <th>Forma de Pagamento</th>
+              <th>Observação</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="item-row">
+              <td><input type="date" value=""></td>
+              <td><input type="number" class="valor-pagamento" value="0.00" step="0.01"></td>
+              <td>
+                <select>
+                  <option value="Dinheiro">Dinheiro</option>
+                  <option value="Cartão de Crédito">Cartão de Crédito</option>
+                  <option value="Cartão de Débito">Cartão de Débito</option>
+                  <option value="Pix">Pix</option>
+                  <option value="Transferência">Transferência</option>
+                  <option value="Boleto">Boleto</option>
+                </select>
+              </td>
+              <td><input type="text" value=""></td>
+              <td><button type="button" class="delete-row-btn">X</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button type="button" id="add-pagamento" class="add-row-btn">Adicionar Pagamento</button>
+    </div>
+    
+    <div class="totals">
+      <p>Produtos: R$ <span id="total-geral-produtos">0.00</span></p>
+      <p>Serviços: R$ <span id="total-geral-servicos">0.00</span></p>
+      <p style="font-size: 1.2em; margin-top: 10px;">TOTAL: R$ <span id="total-geral">0.00</span></p>
+    </div>
+    
+    <div class="actions">
+      <button type="button" id="visualizar-btn" class="btn">Visualizar Orçamento</button>
+      <button type="button" id="gerar-pdf-btn" class="btn btn-secondary">Gerar PDF</button>
+    </div>
+    
+    <!-- Área de Visualização/Preview -->
+    <div id="preview-container">
+      <div id="preview-content">
+        <div class="preview-header">
+          <div class="logo-container">
+            <img class="logo" src="logo.png" alt="Logo">
+            <div class="company-info">
+              <p><strong id="preview-empresa"></strong></p>
+              <p>
+                
+                <span><img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/instagram.svg" alt="Instagram" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;filter:invert(40%);"> @cav_instalacoes</span><br>
+                <span><img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/whatsapp.svg" alt="WhatsApp" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;filter:invert(40%);"> (61) 99947-1046</span>
+              </p>
+              <p><span id="preview-endereco-empresa"></span></p>
+              <p><span id="preview-cidade-empresa"></span></p>
+            </div>
+          </div>
+          <div class="contact-info">
+            <p><span id="preview-telefone-empresa"></span></p>
+            <p><span id="preview-email-empresa"></span></p>
+            <!-- Removido o vendedor -->
+          </div>
+        </div>
+        
+        <div class="orcamento-numero" style="text-align:right;">
+          <span id="preview-data"></span>
+        </div>
+        
+        <div class="slogan" id="preview-slogan"></div>
+        
+        <div class="preview-section">
+          <p>PREVISÃO DE ENTREGA: <span id="preview-previsao-entrega"></span></p>
+        </div>
+        
+        <div class="preview-section">
+          <h3>DADOS DO CLIENTE</h3>
+          <div class="preview-grid">
+            <div class="preview-field">
+              <div class="preview-field-label">Cliente:</div>
+              <div class="preview-field-value" id="preview-cliente"></div>
+            </div>
+            <div class="preview-field">
+              <div class="preview-field-label">CPF/CNPJ:</div>
+              <div class="preview-field-value" id="preview-cpf-cnpj"></div>
+            </div>
+            <div class="preview-field">
+              <div class="preview-field-label">Endereço:</div>
+              <div class="preview-field-value" id="preview-endereco-cliente"></div>
+            </div>
+            <div class="preview-field">
+              <div class="preview-field-label">CEP:</div>
+              <div class="preview-field-value" id="preview-cep"></div>
+            </div>
+            <div class="preview-field">
+              <div class="preview-field-label">Cidade:</div>
+              <div class="preview-field-value" id="preview-cidade"></div>
+            </div>
+            <div class="preview-field">
+              <div class="preview-field-label">Estado:</div>
+              <div class="preview-field-value" id="preview-estado"></div>
+            </div>
+            <div class="preview-field">
+              <div class="preview-field-label">Telefone:</div>
+              <div class="preview-field-value" id="preview-telefone-cliente"></div>
+            </div>
+            <div class="preview-field">
+              <div class="preview-field-label">E-mail:</div>
+              <div class="preview-field-value" id="preview-email-cliente"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="preview-section">
+          <h3>ITENS</h3>
+          <table id="preview-produtos-table">
+            <thead>
+              <tr>
+                <th>ITEM</th>
+                <th>NOME</th>
+                <th>NCM</th>
+                <th>UND.</th>
+                <th>QTD.</th>
+                <th>VR. UNIT.</th>
+              </tr>
+            </thead>
+            <tbody id="preview-produtos-body">
+              <!-- Preenchido via JavaScript -->
+            </tbody>
+          </table>
+          <div class="totals">TOTAL: <span id="preview-total-produtos">0,00</span></div>
+        </div>
+        
+        <div class="preview-section">
+          <h3>SERVIÇOS</h3>
+          <table id="preview-servicos-table">
+            <thead>
+              <tr>
+                <th>ITEM</th>
+                <th>NOME</th>
+                <th>QTD.</th>
+                <th>VR. UNIT.</th>
+              </tr>
+            </thead>
+            <tbody id="preview-servicos-body">
+              <!-- Preenchido via JavaScript -->
+            </tbody>
+          </table>
+          <div class="totals">TOTAL: <span id="preview-total-servicos">0,00</span></div>
+        </div>
+        
+        <div class="totals" style="margin-top: 20px;">
+          <p>PRODUTOS: R$ <span id="preview-total-geral-produtos">0,00</span></p>
+          <p>SERVIÇOS: R$ <span id="preview-total-geral-servicos">0,00</span></p>
+          <p style="font-size: 1.2em; margin-top: 10px;">TOTAL: R$ <span id="preview-total-geral">0,00</span></p>
+        </div>
+        
+        <div class="preview-section">
+          <h3>DADOS DO PAGAMENTO</h3>
+          <table id="preview-pagamento-table">
+            <thead>
+              <tr>
+                <th>VENCIMENTO</th>
+                <th>VALOR</th>
+                <th>FORMA DE PAGAMENTO</th>
+                <th>OBSERVAÇÃO</th>
+              </tr>
+            </thead>
+            <tbody id="preview-pagamento-body">
+              <!-- Preenchido via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Formatação de valores monetários
+    function formatMoney(value) {
+      return parseFloat(value).toFixed(2).replace('.', ',');
+    }
+    
+    // Formatação de data DD/MM/YYYY
+    function formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('pt-BR');
+    }
+    
+    // Recalcular subtotais de produtos
+    function calcularSubtotalProdutos() {
+      let total = 0;
+      document.querySelectorAll('#produtos-table .item-row').forEach((row, index) => {
+        const qtd = parseFloat(row.querySelector('.qtd-produto').value) || 0;
+        const valorUnit = parseFloat(row.querySelector('.valor-unit-produto').value) || 0;
+        const subtotal = qtd * valorUnit;
+        row.querySelector('.subtotal-produto').textContent = subtotal.toFixed(2);
+        row.cells[0].textContent = index + 1; // Atualiza o número do item
+        total += subtotal;
+      });
+      document.getElementById('total-produtos').textContent = total.toFixed(2);
+      document.getElementById('total-geral-produtos').textContent = total.toFixed(2);
+      calcularTotal();
+      return total;
+    }
+    
+    // Recalcular subtotais de serviços
+    function calcularSubtotalServicos() {
+      let total = 0;
+      document.querySelectorAll('#servicos-table .item-row').forEach((row, index) => {
+        const qtd = parseFloat(row.querySelector('.qtd-servico').value) || 0;
+        const valorUnit = parseFloat(row.querySelector('.valor-unit-servico').value) || 0;
+        const subtotal = qtd * valorUnit;
+        row.querySelector('.subtotal-servico').textContent = subtotal.toFixed(2);
+        row.cells[0].textContent = index + 1;
+        total += subtotal;
+      });
+      document.getElementById('total-servicos').textContent = total.toFixed(2);
+      document.getElementById('total-geral-servicos').textContent = total.toFixed(2);
+      calcularTotal();
+      return total;
+    }
+
+    // Calcular total geral
+    function calcularTotal() {
+      const totalProdutos = parseFloat(document.getElementById('total-geral-produtos').textContent) || 0;
+      const totalServicos = parseFloat(document.getElementById('total-geral-servicos').textContent) || 0;
+      const total = totalProdutos + totalServicos;
+      document.getElementById('total-geral').textContent = total.toFixed(2);
+      // Atualiza o valor do pagamento se houver só uma linha
+      const pagamentoRows = document.querySelectorAll('#pagamento-table .item-row');
+      if (pagamentoRows.length === 1) {
+        pagamentoRows[0].querySelector('.valor-pagamento').value = total.toFixed(2);
+      }
+    }
+
+    // Atualiza preview com os dados do formulário
+    function atualizarPreview() {
+      // Empresa
+      document.getElementById('preview-empresa').textContent = document.getElementById('empresa').value || '';
+      // Removido preview-cnpj e preview-vendedor
+      document.getElementById('preview-endereco-empresa').textContent = document.getElementById('endereco-empresa').value;
+      document.getElementById('preview-cidade-empresa').textContent = document.getElementById('cidade-empresa').value;
+      document.getElementById('preview-telefone-empresa').textContent = document.getElementById('telefone-empresa').value;
+      document.getElementById('preview-email-empresa').textContent = document.getElementById('email-empresa').value;
+      // Slogan
+      document.getElementById('preview-slogan').innerHTML = document.getElementById('slogan').value.replace(/\r?\n/g, '<br>');
+      // Data
+      document.getElementById('preview-data').textContent = formatDate(document.getElementById('data').value);
+      document.getElementById('preview-previsao-entrega').textContent = formatDate(document.getElementById('previsao-entrega').value);
+      // Cliente
+      document.getElementById('preview-cliente').textContent = document.getElementById('cliente').value;
+      document.getElementById('preview-cpf-cnpj').textContent = document.getElementById('cpf-cnpj').value;
+      document.getElementById('preview-endereco-cliente').textContent = document.getElementById('endereco-cliente').value;
+      document.getElementById('preview-cep').textContent = document.getElementById('cep').value;
+      document.getElementById('preview-cidade').textContent = document.getElementById('cidade').value;
+      document.getElementById('preview-estado').textContent = document.getElementById('estado').value;
+      document.getElementById('preview-telefone-cliente').textContent = document.getElementById('telefone-cliente').value;
+      document.getElementById('preview-email-cliente').textContent = document.getElementById('email-cliente').value;
+
+      // Produtos
+      const produtosBody = document.getElementById('preview-produtos-body');
+      produtosBody.innerHTML = '';
+      let totalProdutos = 0;
+      document.querySelectorAll('#produtos-table .item-row').forEach((row, idx) => {
+        const qtd = parseFloat(row.querySelector('.qtd-produto').value) || 0;
+        const valorUnit = parseFloat(row.querySelector('.valor-unit-produto').value) || 0;
+        const subtotal = qtd * valorUnit;
+        totalProdutos += subtotal;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${row.cells[1].querySelector('input').value}</td>
+          <td>${row.cells[2].querySelector('input').value}</td>
+          <td>${row.cells[3].querySelector('input').value}</td>
+          <td>${qtd}</td>
+          <td>R$ ${formatMoney(valorUnit)}</td>
+        `;
+        produtosBody.appendChild(tr);
+      });
+      document.getElementById('preview-total-produtos').textContent = 'R$ ' + formatMoney(totalProdutos);
+      document.getElementById('preview-total-geral-produtos').textContent = formatMoney(totalProdutos);
+
+      // Serviços
+      const servicosBody = document.getElementById('preview-servicos-body');
+      servicosBody.innerHTML = '';
+      let totalServicos = 0;
+      document.querySelectorAll('#servicos-table .item-row').forEach((row, idx) => {
+        const qtd = parseFloat(row.querySelector('.qtd-servico').value) || 0;
+        const valorUnit = parseFloat(row.querySelector('.valor-unit-servico').value) || 0;
+        const subtotal = qtd * valorUnit;
+        totalServicos += subtotal;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${row.cells[1].querySelector('input').value}</td>
+          <td>${qtd}</td>
+          <td>R$ ${formatMoney(valorUnit)}</td>
+        `;
+        servicosBody.appendChild(tr);
+      });
+      document.getElementById('preview-total-servicos').textContent = 'R$ ' + formatMoney(totalServicos);
+      document.getElementById('preview-total-geral-servicos').textContent = formatMoney(totalServicos);
+
+      // Totais
+      const totalGeral = totalProdutos + totalServicos;
+      document.getElementById('preview-total-geral').textContent = formatMoney(totalGeral);
+
+      // Pagamento
+      const pagamentoBody = document.getElementById('preview-pagamento-body');
+      pagamentoBody.innerHTML = '';
+      document.querySelectorAll('#pagamento-table .item-row').forEach(row => {
+        const venc = row.cells[0].querySelector('input').value;
+        const valor = row.cells[1].querySelector('input').value;
+        const forma = row.cells[2].querySelector('select').value;
+        const obs = row.cells[3].querySelector('input').value;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${formatDate(venc)}</td>
+          <td>R$ ${formatMoney(valor)}</td>
+          <td>${forma}</td>
+          <td>${obs}</td>
+        `;
+        pagamentoBody.appendChild(tr);
+      });
+    }
+
+    // Adicionar/remover linhas produtos/serviços/pagamento
+    function addProdutoRow() {
+      const table = document.getElementById('produtos-table').querySelector('tbody');
+      const rowCount = table.rows.length;
+      const tr = document.createElement('tr');
+      tr.className = 'item-row';
+      tr.innerHTML = `
+        <td>${rowCount + 1}</td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="number" class="qtd-produto" value="1.00" step="0.01"></td>
+        <td><input type="number" class="valor-unit-produto" value="0.00" step="0.01"></td>
+        <td class="subtotal-produto">0.00</td>
+        <td><button type="button" class="delete-row-btn">X</button></td>
+      `;
+      table.appendChild(tr);
+      bindRowEvents(tr, 'produto');
+    }
+
+    function addServicoRow() {
+      const table = document.getElementById('servicos-table').querySelector('tbody');
+      const rowCount = table.rows.length;
+      const tr = document.createElement('tr');
+      tr.className = 'item-row';
+      tr.innerHTML = `
+        <td>${rowCount + 1}</td>
+        <td><input type="text"></td>
+        <td><input type="number" class="qtd-servico" value="1.00" step="0.01"></td>
+        <td><input type="number" class="valor-unit-servico" value="0.00" step="0.01"></td>
+        <td class="subtotal-servico">0.00</td>
+        <td><button type="button" class="delete-row-btn">X</button></td>
+      `;
+      table.appendChild(tr);
+      bindRowEvents(tr, 'servico');
+    }
+
+    function addPagamentoRow() {
+      const table = document.getElementById('pagamento-table').querySelector('tbody');
+      const tr = document.createElement('tr');
+      tr.className = 'item-row';
+      tr.innerHTML = `
+        <td><input type="date"></td>
+        <td><input type="number" class="valor-pagamento" value="0.00" step="0.01"></td>
+        <td>
+          <select>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Pix">Pix</option>
+            <option value="Transferência">Transferência</option>
+            <option value="Boleto">Boleto</option>
+          </select>
+        </td>
+        <td><input type="text"></td>
+        <td><button type="button" class="delete-row-btn">X</button></td>
+      `;
+      table.appendChild(tr);
+      bindRowEvents(tr, 'pagamento');
+    }
+
+    // Eventos para linhas dinâmicas
+    function bindRowEvents(tr, tipo) {
+      if (tipo === 'produto') {
+        tr.querySelector('.qtd-produto').addEventListener('input', calcularSubtotalProdutos);
+        tr.querySelector('.valor-unit-produto').addEventListener('input', calcularSubtotalProdutos);
+      }
+      if (tipo === 'servico') {
+        tr.querySelector('.qtd-servico').addEventListener('input', calcularSubtotalServicos);
+        tr.querySelector('.valor-unit-servico').addEventListener('input', calcularSubtotalServicos);
+      }
+      tr.querySelector('.delete-row-btn').addEventListener('click', function () {
+        tr.remove();
+        if (tipo === 'produto') calcularSubtotalProdutos();
+        if (tipo === 'servico') calcularSubtotalServicos();
+        if (tipo === 'pagamento') atualizarPreview();
+      });
+      if (tipo === 'pagamento') {
+        tr.querySelector('.valor-pagamento').addEventListener('input', atualizarPreview);
+        tr.querySelector('select').addEventListener('change', atualizarPreview);
+        tr.querySelector('input[type="date"]').addEventListener('input', atualizarPreview);
+        tr.querySelector('input[type="text"]').addEventListener('input', atualizarPreview);
+      }
+    }
+
+    // Eventos iniciais
+    document.querySelectorAll('.qtd-produto, .valor-unit-produto').forEach(input => {
+      input.addEventListener('input', calcularSubtotalProdutos);
+    });
+    document.querySelectorAll('.qtd-servico, .valor-unit-servico').forEach(input => {
+      input.addEventListener('input', calcularSubtotalServicos);
+    });
+    document.querySelectorAll('.delete-row-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const tr = btn.closest('tr');
+        const table = tr.closest('table');
+        tr.remove();
+        if (table.id === 'produtos-table') calcularSubtotalProdutos();
+        if (table.id === 'servicos-table') calcularSubtotalServicos();
+        atualizarPreview();
+      });
+    });
+
+    document.getElementById('add-produto').addEventListener('click', addProdutoRow);
+    document.getElementById('add-servico').addEventListener('click', addServicoRow);
+    document.getElementById('add-pagamento').addEventListener('click', addPagamentoRow);
+
+    // Atualizar preview ao clicar no botão
+    document.getElementById('visualizar-btn').addEventListener('click', function () {
+      atualizarPreview();
+      document.getElementById('preview-container').style.display = 'block';
+      window.scrollTo({ top: document.getElementById('preview-container').offsetTop, behavior: 'smooth' });
+    });
+
+    // Atualizar preview ao editar campos principais
+    document.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('input', atualizarPreview);
+    });
+
+    // Inicialização
+    calcularSubtotalProdutos();
+    calcularSubtotalServicos();
+    atualizarPreview();
+
+    // Função para gerar PDF do preview
+    document.getElementById('gerar-pdf-btn').addEventListener('click', function () {
+      atualizarPreview();
+      document.getElementById('preview-container').style.display = 'block';
+      const preview = document.getElementById('preview-content');
+      html2canvas(preview, { scale: 2 }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new window.jspdf.jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        // Ajusta a imagem para caber na página A4
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgProps = pdf.getImageProperties(imgData);
+        let pdfWidth = pageWidth - 10;
+        let pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        if (pdfHeight > pageHeight - 10) {
+          pdfHeight = pageHeight - 10;
+          pdfWidth = (imgProps.width * pdfHeight) / imgProps.height;
+        }
+        pdf.addImage(imgData, 'PNG', 5, 5, pdfWidth, pdfHeight);
+        pdf.save('orcamento-cav.pdf');
+      });
+    });
+  </script>
+</body>
+</html>
