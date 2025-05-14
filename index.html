@@ -252,7 +252,7 @@
     }
 
     @media (max-width: 768px) {
-      .container {
+      body:not(.force-desktop) .container {
         padding: 5px;
       }
       .form-row {
@@ -299,6 +299,21 @@
       .totals {
         text-align: left;
       }
+    }
+
+    /* Força layout desktop para exportação PDF */
+    .force-desktop * {
+      all: unset !important;
+    }
+    .force-desktop {
+      width: 900px !important;
+      max-width: 900px !important;
+      min-width: 900px !important;
+      font-size: 1em !important;
+      background: white !important;
+      color: #222 !important;
+      box-sizing: border-box !important;
+      /* Adicione outras regras se necessário */
     }
   </style>
 </head>
@@ -932,27 +947,38 @@
     document.getElementById('gerar-pdf-btn').addEventListener('click', function () {
       atualizarPreview();
       document.getElementById('preview-container').style.display = 'block';
+
+      // Força layout desktop no preview
       const preview = document.getElementById('preview-content');
-      html2canvas(preview, { scale: 2 }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new window.jspdf.jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
+      preview.classList.add('force-desktop');
+      document.body.classList.add('force-desktop');
+
+      setTimeout(() => {
+        html2canvas(preview, { scale: 2 }).then(canvas => {
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new window.jspdf.jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+          });
+          // Ajusta a imagem para caber na página A4
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const imgProps = pdf.getImageProperties(imgData);
+          let pdfWidth = pageWidth - 10;
+          let pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+          if (pdfHeight > pageHeight - 10) {
+            pdfHeight = pageHeight - 10;
+            pdfWidth = (imgProps.width * pdfHeight) / imgProps.height;
+          }
+          pdf.addImage(imgData, 'PNG', 5, 5, pdfWidth, pdfHeight);
+          pdf.save('orcamento-cav.pdf');
+
+          // Remove a classe após exportar
+          preview.classList.remove('force-desktop');
+          document.body.classList.remove('force-desktop');
         });
-        // Ajusta a imagem para caber na página A4
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgProps = pdf.getImageProperties(imgData);
-        let pdfWidth = pageWidth - 10;
-        let pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        if (pdfHeight > pageHeight - 10) {
-          pdfHeight = pageHeight - 10;
-          pdfWidth = (imgProps.width * pdfHeight) / imgProps.height;
-        }
-        pdf.addImage(imgData, 'PNG', 5, 5, pdfWidth, pdfHeight);
-        pdf.save('orcamento-cav.pdf');
-      });
+      }, 100); // Pequeno delay para garantir o estilo
     });
   </script>
 </body>
